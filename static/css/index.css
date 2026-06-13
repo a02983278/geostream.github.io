@@ -1,0 +1,480 @@
+body {
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 1.125rem;
+}
+
+/* Keep section content and video captions at same size as body */
+.section .content,
+.section .content p {
+  font-size: 1em;
+}
+
+.container.is-max-desktop {
+  max-width: 1200px;
+}
+
+
+.footer .icon-link {
+  font-size: 25px;
+  color: #000;
+}
+
+.link-block a {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.dnerf {
+  font-variant: small-caps;
+}
+
+
+.teaser .hero-body {
+  padding-top: 0;
+  padding-bottom: 3rem;
+}
+
+.teaser {
+  font-family: 'Google Sans', sans-serif;
+}
+
+
+.publication-title {}
+
+.publication-banner {
+  max-height: parent;
+
+}
+
+.publication-banner video {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  object-fit: fit;
+}
+
+.publication-header .hero-body {}
+
+.publication-title {
+  font-family: 'Google Sans', sans-serif;
+}
+
+.publication-authors {
+  font-family: 'Google Sans', sans-serif;
+}
+
+.tldr {
+  font-size: 1.15rem;
+  line-height: 1.55;
+  margin: 1.25rem auto 0;
+  text-align: left;
+  color: #363636;
+  width: 100%;
+}
+
+.publication-venue {
+  color: #555;
+  width: fit-content;
+  font-weight: bold;
+}
+
+.publication-awards {
+  color: #ff3860;
+  width: fit-content;
+  font-weight: bolder;
+}
+
+.publication-authors {}
+
+.publication-authors a {
+  color: hsl(204, 86%, 53%) !important;
+}
+
+.publication-authors a:hover {
+  text-decoration: underline;
+}
+
+.author-block {
+  display: inline-block;
+}
+
+.publication-banner img {}
+
+.publication-authors {
+  /*color: #4286f4;*/
+}
+
+.publication-video {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%;
+
+  overflow: hidden;
+  border-radius: 10px !important;
+}
+
+.publication-video iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.publication-body img {}
+
+.results-carousel {
+  overflow: hidden;
+}
+
+.results-carousel .item {
+  margin: 5px;
+  overflow: hidden;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  padding: 0;
+  font-size: 0;
+}
+
+.results-carousel video {
+  margin: 0;
+}
+
+
+.interpolation-panel {
+  background: #f5f5f5;
+  border-radius: 10px;
+}
+
+.interpolation-panel .interpolation-image {
+  width: 100%;
+  border-radius: 5px;
+}
+
+.interpolation-video-column {}
+
+.interpolation-panel .slider {
+  margin: 0 !important;
+}
+
+.interpolation-panel .slider {
+  margin: 0 !important;
+}
+
+#interpolation-image-wrapper {
+  width: 100%;
+}
+
+#interpolation-image-wrapper img {
+  border-radius: 5px;
+}
+
+/* Qualitative Results — tabs (match body font size) */
+.comparison-tabs {
+  margin-bottom: 1rem;
+  font-size: 1em;
+}
+
+.comparison-tabs .tabs a,
+.comparison-tabs ul li a {
+  font-size: 1em;
+}
+
+.comparison-tab-pane {
+  display: none;
+}
+
+.comparison-tab-pane.is-active {
+  display: block;
+}
+
+/* Comparison: GeoStream vs Baselines — one example per page, arrow pager */
+.id-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin: 0.75rem 0 0.25rem;
+  user-select: none;
+}
+
+/* Pager controls are click targets, not text: don't show a text caret or a
+   selection highlight, and only show a focus ring for keyboard navigation. */
+.id-pager .pager-arrow,
+.id-pager .pager-dot {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.id-pager .pager-arrow:focus:not(:focus-visible),
+.id-pager .pager-dot:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.id-pager .pager-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.1rem;
+  color: #363636;
+  background: #f5f5f5;
+  border: 1px solid #dbdbdb;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.id-pager .pager-arrow:hover {
+  background: #363636;
+  color: #fff;
+}
+
+.id-pager .pager-arrow:active {
+  transform: scale(0.92);
+}
+
+.id-pager .pager-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  max-width: 34rem;
+}
+
+.id-pager .pager-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #d2d2d2;
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.2s ease;
+}
+
+.id-pager .pager-dot:hover {
+  background: #aaa;
+}
+
+.id-pager .pager-dot.is-active {
+  width: 30px;
+  background: #363636;
+}
+
+/* Condition / Generation caption colors */
+.label-condition {
+  color: #1f9d4d;
+}
+
+.label-generation {
+  color: #e0245e;
+}
+
+/* Only the current example is shown; the rest stay rendered but hidden. */
+.comparison-by-id details.compare-block {
+  display: none;
+  border: 1px solid #b5b5b5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.comparison-by-id details.compare-block.is-current {
+  display: block;
+}
+
+/* The example ID now lives in the pager label, so hide the summary. */
+.comparison-by-id .compare-summary {
+  display: none;
+}
+
+.compare-grid-5x2 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.compare-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.compare-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.compare-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.compare-grid-5x2.compare-videos .compare-cell,
+.compare-grid-2.compare-videos .compare-cell,
+.compare-grid-3.compare-videos .compare-cell,
+.compare-grid-4.compare-videos .compare-cell {
+  min-width: 0;
+}
+
+.compare-videos video {
+  width: 100%;
+  max-height: 200px;
+  border-radius: 6px;
+  background: #000;
+  /* 允许点击与右键，以便显示控件和右键菜单（如 Safari 的 Show All Controls） */
+  pointer-events: auto;
+}
+
+.compare-videos .compare-placeholder {
+  width: 100%;
+  aspect-ratio: 1280 / 704;
+  max-height: 200px;
+  border-radius: 6px;
+  background: #1a1a1a;
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.compare-videos p {
+  margin-bottom: 0.25rem;
+  font-size: 1em;
+}
+
+/* Global floating back-to-top button */
+.back-to-top-float {
+  position: fixed;
+  right: 3rem;
+  bottom: 3rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  background: #363636;
+  border: none;
+  border-radius: 50%;
+  text-decoration: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.back-to-top-float:hover {
+  background: #e2e6eb;
+  color: #363636;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ---------- Mobile layout (<=768px) ---------- */
+@media screen and (max-width: 768px) {
+  body {
+    font-size: 1rem;
+  }
+
+  .section {
+    padding: 2rem 1rem;
+  }
+
+  .hero .hero-body {
+    padding: 1.5rem 1rem;
+  }
+
+  .teaser .hero-body {
+    padding-top: 0;
+    padding-bottom: 1.5rem;
+  }
+
+  .publication-title.title.is-1 {
+    font-size: 1.6rem;
+    line-height: 1.3;
+  }
+
+  .section .title.is-3 {
+    font-size: 1.4rem;
+  }
+
+  .tldr {
+    font-size: 1rem;
+  }
+
+  /* Justified text leaves large gaps in narrow columns */
+  .content.has-text-justified,
+  p.has-text-justified {
+    text-align: left !important;
+  }
+
+  /* Tabs: two per row instead of overflowing horizontally */
+  .comparison-tabs {
+    white-space: normal;
+  }
+
+  .comparison-tabs ul {
+    /* Bulma sets flex-shrink: 0, which keeps the ul at full content width
+       and clips the overflowing tabs; let it shrink and wrap instead. */
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .comparison-tabs li {
+    display: flex;
+    flex: 1 1 50%;
+  }
+
+  .comparison-tabs ul li a {
+    flex: 1;
+    font-size: 0.95em;
+    text-align: center;
+  }
+
+  /* Comparison grids collapse to one video per row */
+  .compare-grid-5x2,
+  .compare-grid-4,
+  .compare-grid-3,
+  .compare-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .id-pager {
+    gap: 0.75rem;
+  }
+
+  .id-pager .pager-dots {
+    gap: 0.5rem;
+  }
+
+  .back-to-top-float {
+    right: 1rem;
+    bottom: 1rem;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}

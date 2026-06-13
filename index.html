@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+    content="GeoStream: Toward Precise Camera Controlled Streaming Video Generation. Anonymous submission.">
+  <meta name="keywords"
+    content="GeoStream, camera control, streaming video generation, world model, 3D cache, autoregressive video diffusion">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GeoStream</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/strange.png" type="image/png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+
+<body>
+
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+        <a class="navbar-item" href="#motivation">MOTIVATION</a>
+        <a class="navbar-item" href="#method-overview">METHOD</a>
+        <a class="navbar-item" href="#qualitative-results">RESULTS</a>
+      </div>
+    </div>
+  </nav>
+
+
+  <section class="hero" id="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">GeoStream: Toward Precise Camera Controlled Streaming Video
+              Generation</h1>
+            <p class="is-size-5 publication-authors">Anonymous Authors</p>
+            <p class="tldr"><strong>TL;DR:</strong> We present <strong>GeoStream</strong>, a streaming video generation
+              system with precise metric-scale camera control via a self-refreshing 3D cache, enabling accurate
+              viewpoint manipulation
+              under severe and extreme camera motions. More examples below!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero teaser" id="teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <div class="content has-text-centered">
+          <div class="teaser-flow"
+            style="display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 12px; width: 100%;">
+            <img src="./static/teaser/tr_frame.png" alt="Top-right (first frame)"
+              style="flex: 1 1 0; min-width: 0; aspect-ratio: 1280/704; border-radius: 8px; object-fit: contain;" />
+            <span class="teaser-arrow"
+              style="flex-shrink: 0; font-size: clamp(1rem, 2.5vw, 1.75rem); color: #333;">+</span>
+            <video src="./static/teaser/bl.mp4"
+              style="flex: 1 1 0; min-width: 0; aspect-ratio: 1; border-radius: 8px; object-fit: cover;" muted loop
+              playsinline autoplay></video>
+            <span class="teaser-arrow"
+              style="flex-shrink: 0; font-size: clamp(1rem, 2.5vw, 1.75rem); color: #333;">➡️</span>
+            <video src="./static/teaser/br.mp4"
+              style="flex: 1 1 0; min-width: 0; aspect-ratio: 1280/704; border-radius: 8px; object-fit: contain;" muted
+              loop playsinline autoplay></video>
+            <span class="teaser-arrow"
+              style="flex-shrink: 0; font-size: clamp(1rem, 2.5vw, 1.75rem); color: #333;">🔄</span>
+            <video src="./static/teaser/tl.mp4"
+              style="flex: 1 1 0; min-width: 0; aspect-ratio: 1280/704; border-radius: 8px; object-fit: contain;" muted
+              loop playsinline autoplay></video>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section" id="motivation">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3">Motivation</h2>
+      <p class="content has-text-justified">
+        🎯 We aim for precise camera control under severe motion and extreme magnitude. How do we achieve this?
+      </p>
+      <ul class="content has-text-justified">
+        <li>📐 <strong>Explicit-geometry-based camera conditioning</strong> for more precise control under severe motion
+        </li>
+      </ul>
+      <div class="compare-grid-3 compare-videos">
+        <div class="compare-cell">
+          <p class="has-text-weight-semibold">Condition</p>
+          <video autoplay muted loop playsinline controls preload="metadata">
+            <source src="./static/videos/severe_motion/8058cb1057cab35c/poses_gt.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="compare-cell">
+          <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+          <video autoplay muted loop playsinline controls preload="metadata">
+            <source src="./static/videos/severe_motion/8058cb1057cab35c/geostream.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="compare-cell">
+          <p class="has-text-weight-semibold">CameraCtrl II</p>
+          <video autoplay muted loop playsinline controls preload="metadata">
+            <source src="./static/videos/severe_motion/8058cb1057cab35c/cameractrl2.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <ul class="content has-text-justified">
+        <li>🚃 <strong>Online refreshing 3D cache</strong> for better handling poses with extreme magnitude</li>
+      </ul>
+      <div class="compare-grid-3 compare-videos">
+        <div class="compare-cell">
+          <p class="has-text-weight-semibold">Condition</p>
+          <video autoplay muted loop playsinline controls preload="metadata">
+            <source src="./static/videos/extreme_magnitude/af0133aadb2af512/poses_gt.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="compare-cell">
+          <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+          <video autoplay muted loop playsinline controls preload="metadata">
+            <source src="./static/videos/extreme_magnitude/af0133aadb2af512/geostream.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="compare-cell">
+          <p class="has-text-weight-semibold">GEN3C</p>
+          <video autoplay muted loop playsinline controls preload="metadata">
+            <source src="./static/videos/extreme_magnitude/af0133aadb2af512/gen3c.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section" id="method-overview">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3">Method Overview</h2>
+      <div class="content has-text-centered">
+        <img src="./static/images/pipeline.png" alt="Method Overview"
+          style="max-width: 100%; height: auto; border-radius: 8px;" />
+      </div>
+      <div class="content has-text-justified method-overview-desc">
+        <p><strong>🧑‍🏫 Stage 1: Bidirectional Teacher Training.</strong> </p>
+        <p> We train a teacher model on ground-truth frames with explicit geometric conditioning: depth from a frame is
+          unprojected to a 3D point cloud and reprojected into the target view to produce point-rendering conditioning
+          for the diffusion transformer.</p>
+        <p><strong>🧑‍🎓 Stage 2: On-Policy Causal Distillation.</strong> </p>
+        <p> We distill a causal student for autoregressive streaming. After a brief teacher-forced warm-up, the student
+          is distilled on-policy via DMD. The student rolls out its own frames, and the 3D cache used as conditioning
+          is re-rendered from depth estimated on those self-generated frames, matching the <em>self-refresh</em>
+          mechanism used at inference. This aligns the train and inference distributions on both the frame stream and
+          the geometric conditioning, jointly closing standard autoregressive drift and the second-order feedback loop
+          induced by the cache.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section" id="qualitative-results">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3">Qualitative Results</h2>
+      <p class="content has-text-justified">
+      </p>
+      <div class="tabs is-boxed comparison-tabs">
+        <ul>
+          <li class="is-active" data-comparison-tab="original"><a>Training-Length Rollout</a></li>
+          <li data-comparison-tab="longterm"><a>Longterm Rollout</a></li>
+          <li data-comparison-tab="severe"><a>Severe Motion</a></li>
+          <li data-comparison-tab="extreme"><a>Extreme Magnitude</a></li>
+        </ul>
+      </div>
+      <div id="comparison-original" class="comparison-tab-pane is-active">
+        <p class="content has-text-justified">
+          GeoStream (Ours) vs baselines on the RealEstate10K Test set.
+        </p>
+        <div class="content comparison-by-id">
+          <details class="compare-block" data-id="0387ef3895b1393c">
+            <summary class="compare-summary">0387ef3895b1393c</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0387ef3895b1393c/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="1aaeb7f0aee2f9e4">
+            <summary class="compare-summary">1aaeb7f0aee2f9e4</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/1aaeb7f0aee2f9e4/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="3e07add8413f8157">
+            <summary class="compare-summary">3e07add8413f8157</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/3e07add8413f8157/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="40f92f1e65a5e1dd">
+            <summary class="compare-summary">40f92f1e65a5e1dd</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/40f92f1e65a5e1dd/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="0f6206df8a8e440a">
+            <summary class="compare-summary">0f6206df8a8e440a</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0f6206df8a8e440a/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="59bfa3dceffc42b6">
+            <summary class="compare-summary">59bfa3dceffc42b6</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/59bfa3dceffc42b6/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="5a15212752d1659a">
+            <summary class="compare-summary">5a15212752d1659a</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/5a15212752d1659a/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="6a3fc7c0aee227b9">
+            <summary class="compare-summary">6a3fc7c0aee227b9</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/6a3fc7c0aee227b9/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="0d46043105cf3185">
+            <summary class="compare-summary">0d46043105cf3185</summary>
+            <div class="compare-grid-5x2 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/ground_truth.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">MotionCtrl</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/motionctrl.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">SEVA</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/seva.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/cameractrl2.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">FlexWorld + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/flexworld.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">ViewCrafter + MoGe-2</p><video autoplay muted loop playsinline
+                  controls preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/viewcrafter.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">VMem + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/vmem.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Spatia + MoGe-2</p><video autoplay muted loop playsinline controls
+                  preload="metadata">
+                  <source src="./static/videos/training_length_rollout/0d46043105cf3185/spatia.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div id="comparison-severe" class="comparison-tab-pane">
+        <p class="content has-text-justified">
+          GeoStream (Ours) vs baselines under severe camera motion.
+          The camera trajectories of generated videos are estimated by MapAnything.
+        </p>
+        <div class="content comparison-by-id">
+          <details class="compare-block" data-id="b40142d9233e7825">
+            <summary class="compare-summary">b40142d9233e7825</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/b40142d9233e7825/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/b40142d9233e7825/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/b40142d9233e7825/cameractrl2_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/b40142d9233e7825/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="d942e48c948b3546">
+            <summary class="compare-summary">d942e48c948b3546</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/d942e48c948b3546/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/d942e48c948b3546/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/d942e48c948b3546/cameractrl2_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/d942e48c948b3546/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="86dd81ed2ece0c4e">
+            <summary class="compare-summary">86dd81ed2ece0c4e</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/86dd81ed2ece0c4e/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/86dd81ed2ece0c4e/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/86dd81ed2ece0c4e/cameractrl2_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/86dd81ed2ece0c4e/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="565459b7bb0cbbf9">
+            <summary class="compare-summary">565459b7bb0cbbf9</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/565459b7bb0cbbf9/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/565459b7bb0cbbf9/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/565459b7bb0cbbf9/cameractrl2_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/565459b7bb0cbbf9/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="21e794f71e31becb">
+            <summary class="compare-summary">21e794f71e31becb</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/21e794f71e31becb/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/21e794f71e31becb/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/21e794f71e31becb/cameractrl2_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/21e794f71e31becb/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="91e469c1698f1da4">
+            <summary class="compare-summary">91e469c1698f1da4</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/91e469c1698f1da4/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/91e469c1698f1da4/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/91e469c1698f1da4/cameractrl2_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/severe_motion/91e469c1698f1da4/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div id="comparison-extreme" class="comparison-tab-pane">
+        <p class="content has-text-justified">
+          GeoStream (Ours) vs baselines under extreme camera motion.
+          The camera trajectories of generated videos are estimated by MapAnything.
+        </p>
+        <div class="content comparison-by-id">
+          <details class="compare-block" data-id="fd48a65a5e252855">
+            <summary class="compare-summary">fd48a65a5e252855</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/fd48a65a5e252855/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/fd48a65a5e252855/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/fd48a65a5e252855/cameractrl2_poses.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/fd48a65a5e252855/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="5c9274b41b9510f7">
+            <summary class="compare-summary">5c9274b41b9510f7</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/5c9274b41b9510f7/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/5c9274b41b9510f7/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/5c9274b41b9510f7/cameractrl2_poses.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/5c9274b41b9510f7/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="4905bc8817511dd2">
+            <summary class="compare-summary">4905bc8817511dd2</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/4905bc8817511dd2/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/4905bc8817511dd2/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/4905bc8817511dd2/cameractrl2_poses.mp4"
+                    type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">CameraCtrl II</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/4905bc8817511dd2/cameractrl2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="01cf55ae3e378faf">
+            <summary class="compare-summary">01cf55ae3e378faf</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/01cf55ae3e378faf/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/01cf55ae3e378faf/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/01cf55ae3e378faf/gen3c_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/01cf55ae3e378faf/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="b1ee9f10fc740b0d">
+            <summary class="compare-summary">b1ee9f10fc740b0d</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/b1ee9f10fc740b0d/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/b1ee9f10fc740b0d/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/b1ee9f10fc740b0d/gen3c_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/b1ee9f10fc740b0d/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="cb16176621b1f3a7">
+            <summary class="compare-summary">cb16176621b1f3a7</summary>
+            <div class="compare-grid-4 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/cb16176621b1f3a7/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/cb16176621b1f3a7/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/cb16176621b1f3a7/gen3c_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GEN3C</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/extreme_magnitude/cb16176621b1f3a7/gen3c.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div id="comparison-longterm" class="comparison-tab-pane">
+        <p class="content has-text-justified">
+          Long-term rollouts on the RealEstate10K Test set.
+          The camera trajectory of the generated video is estimated by MapAnything. </p>
+        <div class="content comparison-by-id">
+          <details class="compare-block" data-id="666be06e68dcb7c5">
+            <summary class="compare-summary">666be06e68dcb7c5</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/666be06e68dcb7c5/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/666be06e68dcb7c5/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/666be06e68dcb7c5/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="03906f66d3bca71a">
+            <summary class="compare-summary">03906f66d3bca71a</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/03906f66d3bca71a/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/03906f66d3bca71a/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/03906f66d3bca71a/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="a7f0e6b19b27514d">
+            <summary class="compare-summary">a7f0e6b19b27514d</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/a7f0e6b19b27514d/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/a7f0e6b19b27514d/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/a7f0e6b19b27514d/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="4b86587ecd3325f4">
+            <summary class="compare-summary">4b86587ecd3325f4</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/4b86587ecd3325f4/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/4b86587ecd3325f4/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/4b86587ecd3325f4/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="1e1e13de4ebea05a">
+            <summary class="compare-summary">1e1e13de4ebea05a</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/1e1e13de4ebea05a/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/1e1e13de4ebea05a/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/1e1e13de4ebea05a/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="bc3e794a104aa602">
+            <summary class="compare-summary">bc3e794a104aa602</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/bc3e794a104aa602/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/bc3e794a104aa602/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/bc3e794a104aa602/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="1214f2a11a9fc1ed">
+            <summary class="compare-summary">1214f2a11a9fc1ed</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/1214f2a11a9fc1ed/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/1214f2a11a9fc1ed/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/1214f2a11a9fc1ed/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="f43c67fe4e7e28cf">
+            <summary class="compare-summary">f43c67fe4e7e28cf</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/f43c67fe4e7e28cf/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/f43c67fe4e7e28cf/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/f43c67fe4e7e28cf/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+          <details class="compare-block" data-id="8c8ed2adba3dad7a">
+            <summary class="compare-summary">8c8ed2adba3dad7a</summary>
+            <div class="compare-grid-3 compare-videos">
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold"><span class="label-condition">Condition</span> / <span
+                    class="label-generation">Generation</span></p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/8c8ed2adba3dad7a/geostream_poses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">Ground Truth</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/8c8ed2adba3dad7a/ground_truth.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="compare-cell">
+                <p class="has-text-weight-semibold">GeoStream (Ours)</p>
+                <video autoplay muted loop playsinline controls preload="metadata">
+                  <source src="./static/videos/longterm_rollout/8c8ed2adba3dad7a/geostream.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="container">
+      <p class="has-text-centered is-size-7">Anonymous Authors &middot; Submission under double-blind review</p>
+    </div>
+  </footer>
+
+  <a href="#hero" id="back-to-top-float" class="back-to-top-float" title="Top">Top</a>
+
+</body>
+
+</html>
